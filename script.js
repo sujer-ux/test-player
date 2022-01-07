@@ -17,52 +17,41 @@ function playSong() {
 }
 
 
-function rew() {
-    let w,
-        o,
-        timer = true;
-        
-    if (timer) {
-        audio.addEventListener('timeupdate', timeUpdate);
-    }
-
+function rew(elem, audio) {
+    let w, o;
     
-    time.parentNode.addEventListener('mousedown', hintW);
-    function hintW() {
-        time.parentNode.addEventListener('mousemove', hintMove);
+    audio.addEventListener('timeupdate', timeUpdate);
+    
+    elem.parentNode.addEventListener('mousedown', function() {
+        this.addEventListener('mousemove', hintMove);
         audio.removeEventListener('timeupdate', timeUpdate);
-        timer = false;
-    }
+    });
     
-    time.parentNode.addEventListener('mouseup', timeMouseup);
-    function timeMouseup() {
-        time.parentNode.removeEventListener('mousemove', hintMove);
+    elem.parentNode.addEventListener('mouseup', function() {
+        this.removeEventListener('mousemove', hintMove);
         audio.addEventListener('timeupdate', timeUpdate);
         setTime();
-    }
+    });
 
-    
     
     function timeUpdate() {
         let d = audio.duration;
         let c = audio.currentTime;
-        time.style.width = (100 * c) / d + '%';
+        elem.style.width = (100 * c) / d + '%';
         current.innerHTML = formatted(audio.currentTime);
     }
     function hintMove() {
-        w = time.parentNode.offsetWidth;
+        w = elem.parentNode.offsetWidth;
         o = event.offsetX;
-        time.style.width = (100 * o) / w + '%';
+        elem.style.width = (100 * o) / w + '%';
     }
     function setTime() {
-        w = time.parentNode.offsetWidth;
+        w = elem.parentNode.offsetWidth;
         o = event.offsetX;
         audio.currentTime = audio.duration * o/w;
     }
 }
-
-
-rew();
+rew(time, audio);
 
 audio.onended = function() {
     play.classList.remove('played');
