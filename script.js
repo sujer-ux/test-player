@@ -7,7 +7,7 @@ let audio = new Audio('https://sujer-ux.github.io/pb.su/songs/widar_love.mp3');
 
 play.onclick = playSong;
 function playSong() {
-    if (!play.classList.contains('played')) {
+    if (audio.paused) {
         audio.play();
         play.classList.add('played');
     } else {
@@ -16,9 +16,12 @@ function playSong() {
     }
 }
 
+audio.onended = function() {
+    play.classList.remove('played');
+}
 
 function rew(elem, audio) {
-    let w, o;
+    let w = elem.parentNode.offsetWidth;
     
     audio.addEventListener('timeupdate', timeUpdate);
     
@@ -35,27 +38,17 @@ function rew(elem, audio) {
 
     
     function timeUpdate() {
-        let d = audio.duration;
-        let c = audio.currentTime;
-        elem.style.width = (100 * c) / d + '%';
+        elem.style.width = (100 * audio.currentTime) / audio.duration + '%';
         current.innerHTML = formatted(audio.currentTime);
     }
     function hintMove() {
-        w = elem.parentNode.offsetWidth;
-        o = event.offsetX;
-        elem.style.width = (100 * o) / w + '%';
+        elem.style.width = (100 * event.offsetX) / w + '%';
     }
     function setTime() {
-        w = elem.parentNode.offsetWidth;
-        o = event.offsetX;
-        audio.currentTime = audio.duration * o/w;
+        audio.currentTime = audio.duration * event.offsetX / w;
     }
 }
 rew(time, audio);
-
-audio.onended = function() {
-    play.classList.remove('played');
-}
 
 function formatted(input) {
     let timeStamp = input;
