@@ -1,54 +1,95 @@
 const play = document.querySelector('.play'),
       time = document.querySelector('.time-prog'),
       current = document.querySelector('.current'),
-      duration = document.querySelector('.duration');
+      duration = document.querySelector('.duration'),
+      audio = new Audio('https://sujer-ux.github.io/pb.su/songs/widar_love.mp3');
 
-let audio = new Audio('https://sujer-ux.github.io/pb.su/songs/widar_love.mp3');
-
-play.onclick = playSong;
-function playSong() {
-    if (audio.paused) {
-        audio.play();
-        play.classList.add('played');
-    } else {
-        audio.pause();
-        play.classList.remove('played');
-    }
+function playPause() {
+    play.addEventListener('click', function() {
+        if (audio.paused) {
+            audio.play();
+            this.classList.add('played');
+        } else {
+            audio.pause();
+            this.classList.remove('played');
+        }
+    });
+    audio.addEventListener('ended', () => play.classList.remove('played'));
 }
-
-audio.onended = function() {
-    play.classList.remove('played');
-}
+playPause();
 
 function rew(elem, audio) {
-    let w = elem.parentNode.offsetWidth;
+    let w = elem.parentNode.offsetWidth, offsX;
     
     audio.addEventListener('timeupdate', timeUpdate);
     
-    elem.parentNode.addEventListener('mousedown', function() {
-        this.addEventListener('mousemove', hintMove);
-        audio.removeEventListener('timeupdate', timeUpdate);
-    });
-    
-    elem.parentNode.addEventListener('mouseup', function() {
-        this.removeEventListener('mousemove', hintMove);
-        audio.addEventListener('timeupdate', timeUpdate);
-        setTime();
-    });
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        
+        elem.parentNode.addEventListener('touchstart', function(e) {
+            this.addEventListener('touchmove', hintMove);
+            audio.removeEventListener('timeupdate', timeUpdate);
+        });
 
+        elem.parentNode.addEventListener('touchend', function(e) {
+            this.removeEventListener('touchmove', hintMove);
+            audio.addEventListener('timeupdate', timeUpdate);
+            setTime(e)
+        });
+        
+    } else {
+        
+        elem.parentNode.addEventListener('mousedown', function(e) {
+            this.addEventListener('mousemove', hintMove);
+            audio.removeEventListener('timeupdate', timeUpdate);
+        });
+
+        elem.parentNode.addEventListener('mouseup', function(e) {
+            this.removeEventListener('mousemove', hintMove);
+            audio.addEventListener('timeupdate', timeUpdate);
+            setTime(e);
+        });
+    }
     
+    function setTime(e) {
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            offsX = e.changedTouches[0].pageX - e.target.getBoundingClientRect().x;
+        } else {
+            offsX = e.offsetX;
+        }
+        audio.currentTime = audio.duration * offsX / w;
+    }
     function timeUpdate() {
-        elem.style.width = (100 * audio.currentTime) / audio.duration + '%';
-        current.innerHTML = formatted(audio.currentTime);
+        elem.style.width = (100 * this.currentTime) / this.duration + '%';
+        current.innerHTML = formatted(this.currentTime);
     }
-    function hintMove() {
-        elem.style.width = (100 * event.offsetX) / w + '%';
+    function hintMove(e) {
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            offsX = e.changedTouches[0].pageX - e.target.getBoundingClientRect().x;
+        } else {
+            offsX = e.offsetX;
+        }
+        let setW = (100 * offsX) / w;     
+        setW = minMax(setW, 0, 100);
+        elem.style.width = minMax(setW, 0, 100) + '%';
+        
+        function setPreCrnt() {
+            let preCrnt = audio.duration * (offsX / w);
+            current.innerHTML = formatted(minMax(preCrnt, 0, audio.duration));
+        }
+        setPreCrnt();
     }
-    function setTime() {
-        audio.currentTime = audio.duration * event.offsetX / w;
-    }
+    audio.addEventListener('canplaythrough', () => duration.innerHTML = formatted(audio.duration));
 }
 rew(time, audio);
+
+function minMax(num, min, max) {
+    if (num < min) {
+        num = min;
+    } else if (num > max) {
+        num = max;
+    }
+    return num;
+}
 
 function formatted(input) {
     let timeStamp = input;
@@ -60,4 +101,4 @@ function formatted(input) {
     ].join(':');
     return formatted;
 }
-audio.addEventListener('canplaythrough', () => duration.innerHTML = formatted(audio.duration));
+
