@@ -9,6 +9,11 @@ html, body {
     width: 100%;
 }
 
+body {
+    display: flex;
+    justify-content: center;
+}
+
 .un-select {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
