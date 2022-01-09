@@ -43,6 +43,7 @@ body {
     margin-top: 10px;
     cursor: pointer;
     overflow: hidden;
+    touch-action: none;
 }
 
 .time-prog {
