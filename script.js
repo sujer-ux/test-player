@@ -18,45 +18,56 @@ function playPause() {
 }
 playPause();
 
-function rew(elem, audio) {
-    let w = elem.parentNode.offsetWidth, offsX;
+function mediaRewind(elem, media) {
+    let mainElem = elem.parentNode,
+        offsX;
     
     audio.addEventListener('timeupdate', timeUpdate);
     
+    
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         
-        elem.parentNode.addEventListener('touchstart', function(e) {
+        mainElem.addEventListener('touchstart', function(e) {
+            hintMove(e);
             this.addEventListener('touchmove', hintMove);
-            audio.removeEventListener('timeupdate', timeUpdate);
+            media.removeEventListener('timeupdate', timeUpdate);
         });
 
-        elem.parentNode.addEventListener('touchend', function(e) {
+        mainElem.addEventListener('touchend', function(e) {
             this.removeEventListener('touchmove', hintMove);
-            audio.addEventListener('timeupdate', timeUpdate);
-            setTime(e)
+            media.addEventListener('timeupdate', timeUpdate);
+            setTime(e, this);
         });
         
     } else {
-        
-        elem.parentNode.addEventListener('mousedown', function(e) {
-            this.addEventListener('mousemove', hintMove);
-            audio.removeEventListener('timeupdate', timeUpdate);
-        });
+        mainElem.addEventListener('mousedown', function(e) {
+            hintMove(e);
+            document.addEventListener('mousemove', hintMove);
+            media.removeEventListener('timeupdate', timeUpdate);
+            body.classList.add('un-select');
+            document.addEventListener('mouseup', mup);
+            
+            function mup(e) {
+                document.removeEventListener('mousemove', hintMove);
+                media.addEventListener('timeupdate', timeUpdate);
+                body.classList.remove('un-select');
+                setTime(e, mainElem);
+                
+                setTimeout(function() {
+                    document.removeEventListener('mouseup', mup);
 
-        elem.parentNode.addEventListener('mouseup', function(e) {
-            this.removeEventListener('mousemove', hintMove);
-            audio.addEventListener('timeupdate', timeUpdate);
-            setTime(e);
+                }, 1);
+            }
         });
     }
     
-    function setTime(e) {
+    function setTime(e, el) {
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            offsX = e.changedTouches[0].pageX - e.target.getBoundingClientRect().x;
+            offsX = e.changedTouches[0].pageX - mainElem.getBoundingClientRect().x;
         } else {
-            offsX = e.offsetX;
+            offsX = e.pageX - mainElem.getBoundingClientRect().x;
         }
-        audio.currentTime = audio.duration * offsX / w;
+        media.currentTime = media.duration * offsX / el.offsetWidth;
     }
     function timeUpdate() {
         elem.style.width = (100 * this.currentTime) / this.duration + '%';
@@ -64,23 +75,23 @@ function rew(elem, audio) {
     }
     function hintMove(e) {
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            offsX = e.changedTouches[0].pageX - e.target.getBoundingClientRect().x;
+            offsX = e.changedTouches[0].pageX - mainElem.getBoundingClientRect().x;
         } else {
-            offsX = e.offsetX;
+            offsX = e.pageX - mainElem.getBoundingClientRect().x;
         }
-        let setW = (100 * offsX) / w;     
+        let setW = (100 * offsX) / mainElem.offsetWidth;     
         setW = minMax(setW, 0, 100);
         elem.style.width = minMax(setW, 0, 100) + '%';
         
-        function setPreCrnt() {
-            let preCrnt = audio.duration * (offsX / w);
+        function setPreCrnt(el) {
+            let preCrnt = audio.duration * (offsX / el.offsetWidth);
             current.innerHTML = formatted(minMax(preCrnt, 0, audio.duration));
         }
-        setPreCrnt();
+        setPreCrnt(mainElem);
     }
-    audio.addEventListener('canplaythrough', () => duration.innerHTML = formatted(audio.duration));
+    media.addEventListener('canplaythrough', () => duration.innerHTML = formatted(audio.duration));
 }
-rew(time, audio);
+mediaRewind(time, audio);
 
 function minMax(num, min, max) {
     if (num < min) {
